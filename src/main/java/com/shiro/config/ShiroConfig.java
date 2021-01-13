@@ -1,8 +1,11 @@
 package com.shiro.config;
 
 import at.pollux.thymeleaf.shiro.dialect.ShiroDialect;
+import org.apache.shiro.mgt.SecurityManager;
+import org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor;
 import org.apache.shiro.spring.web.ShiroFilterFactoryBean;
 import org.apache.shiro.web.mgt.DefaultWebSecurityManager;
+import org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,11 +28,13 @@ public class ShiroConfig {
          * perms    根据用户的权限来访问资源
          * role     根据角色权限访问
          */
-        Map<String, String> filterMap = new LinkedHashMap<>();
+       /*
+       第一种采用过滤器setFilterChainDefinitionMap进行权限拦截，下面67行第二种一般采用了注解的方式控制权限
+       Map<String, String> filterMap = new LinkedHashMap<>();
         filterMap.put("/user/add","perms[user:add]");
         filterMap.put("/user/update","perms[user:update");
         //过滤
-        bean.setFilterChainDefinitionMap(filterMap);
+        bean.setFilterChainDefinitionMap(filterMap);*/
         //没有认证，跳转登录页
         bean.setLoginUrl("/toLogin");
         //关联关联DefaultWebSecurityManager
@@ -53,10 +58,24 @@ public class ShiroConfig {
 
     /**
      * 用于thymeleaf和shiro标签配合使用，需要配置这个bean，根据权限判断是否要显示该功能
-     * @return
      */
     @Bean
     public ShiroDialect getShiroDialect(){
         return new ShiroDialect();
+    }
+    /**
+     * 下面两个@Bean开启注解方式，来控制权限
+     */
+    @Bean
+    public DefaultAdvisorAutoProxyCreator advisorAutoProxyCreator(){
+        DefaultAdvisorAutoProxyCreator advisorAutoProxyCreator = new DefaultAdvisorAutoProxyCreator();
+        advisorAutoProxyCreator.setProxyTargetClass(true);
+        return advisorAutoProxyCreator;
+    }
+    @Bean
+    public AuthorizationAttributeSourceAdvisor authorizationAttributeSourceAdvisor(SecurityManager securityManager){
+        AuthorizationAttributeSourceAdvisor authorizationAttributeSourceAdvisor = new AuthorizationAttributeSourceAdvisor();
+        authorizationAttributeSourceAdvisor.setSecurityManager(securityManager);
+        return authorizationAttributeSourceAdvisor;
     }
 }
